@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from torch import nn
 import random
+import torch.functional as F
 from collections import namedtuple
 
 
@@ -12,7 +13,7 @@ class ReplayBuffer():
     def __init__(self, capacity, params):
         self.capacity = capacity
         self.memory = {'state':np.empty([self.capacity, params.s_dim]),
-                       'action':np.empty([self.capacity, params.a_dim]),
+                       'action':np.empty([self.capacity, 1]),
                        'next_state':np.empty([self.capacity, params.s_dim]),
                        'reward':np.empty([self.capacity, 1])}
         self.pointer = 0
@@ -74,9 +75,9 @@ class Q_Net(nn.Module):
 
     def forward(self, input):
         x = self.convert_type(input)
-        x = self.linear1(x)
-        x = self.linear2(x)
-        x = self.linear3(x)
+        x = torch.relu(self.linear1(x))
+        x = torch.relu(self.linear2(x))
+        x = torch.relu(self.linear3(x))
 
         return x
 
@@ -101,30 +102,33 @@ class QLearning():
 
     def choose_action(self, state):
         q_value = self.policy_net(state)
-        action = np.argmax(q_value, axis=-1)
+        action = torch.argmax(q_value, dim=-1)
         rand = random.random()
-        if rand > self.epsilon:
-            return action
+        if rand < self.epsilon:
+            return action.cpu().detach().numpy()[0]
         else:
             action = np.random.choice(a=self.params.a_dim, size=1, replace=False, p=None)
-            return action
+            return action[0]
 
     def store_transition(self, transition):
-        self.replay_buffer.push(transition['state'], transition['action'],
-                                transition['next_state'], transition['reward'])
+        self.replay_buffer.push(transition)
 
     def learn(self):
-        sample = self.replay_buffer.sample(10)
-        q_value = self.policy_net(sample['state'])
-        q_value = np.max(q_value, axis=-1)
-        q_value_ = self.target_net(sample['next_state'])
-        q_value_ = np.max(q_value_, axis=-1)
-        error = q_value - (q_value_ + sample['reward'])
-        loss = error.square(axis=-1).mean()
-        self.optim.zero_grad()
-        loss.backward()
-        self.optim.step()
-        self.scheduler_lr.step()
+        if self.replay_buffer.pointer > 10:
+            sample = self.replay_buffer.sample(10)
+            q_value = self.policy_net(sample['state'])
+            q_value = torch.max(q_value, dim=-1)[0]
+            q_value_ = self.target_net(sample['next_state'])
+            q_value_ = torch.max(q_value_, dim=-1)[0]
+            error = q_value - (q_value_ + torch.Tensor(sample['reward']).T)
+            loss = error.square().mean()
+            self.optim.zero_grad()
+            loss.backward()
+            self.optim.step()
+            self.scheduler_lr.step()
+            print("loss:",loss)
+
+        self.target_net.load_state_dict(self.policy_net.state_dict())
 
 
 class Agents():
@@ -136,7 +140,8 @@ class Agents():
         action = []
         for i in range(self.params.n_agents):
             agent = self.agents[i]
-            action.append(agent.choose_action(state[i]))
+            act = agent.choose_action(torch.Tensor(state[i]).unsqueeze(0))
+            action.append(act)
 
         return action
 

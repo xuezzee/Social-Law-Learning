@@ -47,6 +47,7 @@ class BaseEnv():
         labels = np.random.choice(a=self.agent_num, size=self.agent_num, replace=False, p=None)
         busy_agents = np.random.choice(a=self.agent_num, size=self.busy_num, replace=False, p=None)
         self.reward = {}
+        self.rewardRec = {}
         for i in range(len(self.agents)):
             a = self.agents[i]
             if i in busy_agents:
@@ -58,6 +59,7 @@ class BaseEnv():
             a["arrived"] = False
             a["reward"] = False
             self.reward[labels[i]] = 0
+            self.rewardRec[labels[i]] = 0
 
 
     def check_superimposed(self):
@@ -138,8 +140,11 @@ class BaseEnv():
         '''
         for i in range(self.agent_num):
             a = self.agents[i]
-            if a['state'] == 'busy' and a['arrived'] and self.reward[i] == 0:
+            if a['state'] == 'busy' and a['arrived'] and self.rewardRec[i] == 0:
                 self.reward[a['label']] = self.length - self.time_step - a['init_pos']
+                self.rewardRec[a['label']] = self.reward[a['label']]
+            elif a['arrived'] and self.reward[i] != 0:
+                self.reward[a['label']] = 0
 
         return self.reward
 
@@ -172,7 +177,7 @@ class BaseEnv():
                 a['position'][0] = a['position'][0] + 1
                 if a['position'][0] >= self.length - 1:
                     a['arrived'] = True
-                    print("{label}arrived,state:{state},time_step:{time_step}".format(label=a['label'],state=a['state'],time_step=self.time_step))
+                    print("agent{label} arrived, state:{state}, time_step:{time_step}".format(label=a['label'],state=a['state'],time_step=self.time_step))
                 else:
                     self.escalator[tuple(a['position'])] = 'occupied'
 

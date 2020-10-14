@@ -1,19 +1,19 @@
 import numpy as np
 import argparse
-from BaseEnv import BaseEnv
+from env2.BaseEnv import BaseEnv
 
 class EscalatorEnv():
     def __init__(self, args):
         self.baseEnv = BaseEnv(args)
         self.args = args
 
-    def reset(self):
+    def reset(self, epoch=None):
         self.baseEnv.init_agents()
         self.baseEnv.init_escalator()
         state = self.baseEnv.observation
         get_pos = self.baseEnv.get_agent_pos
         get_Astate = self.baseEnv.agent_state
-        self.baseEnv.info()
+        self.baseEnv.info(epoch=epoch)
         for i in range(self.args.agent_num):
             print('%d init_pos:'%self.baseEnv.agents[i]['label'], self.baseEnv.agents[i]['init_pos'])
 
@@ -46,17 +46,17 @@ class EscalatorEnv():
 
     @property
     def obs_space(self):
-        return (self.args.length * 2 + 2,)
+        return ((self.args.length+1) * 2 + 3,)
 
     @property
     def act_space(self):
         return self.args.n_act
 
     def print_reward(self):
-        reward = self.baseEnv.reward
+        reward = self.baseEnv.rewardRec
         print(end='\n')
         for i in range(self.args.agent_num):
-            print("agent{label} reward:{reward}|".format(label=i, reward=reward[i]),end='')
+            print("agent{label}:{reward}|".format(label=i, reward=reward[i]),end='')
         print(end='\n')
 
 
