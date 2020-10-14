@@ -13,6 +13,7 @@ class EscalatorEnv():
         state = self.baseEnv.observation
         get_pos = self.baseEnv.get_agent_pos
         get_Astate = self.baseEnv.agent_state
+        self.baseEnv.info()
         for i in range(self.args.agent_num):
             print('%d init_pos:'%self.baseEnv.agents[i]['label'], self.baseEnv.agents[i]['init_pos'])
 
@@ -51,6 +52,12 @@ class EscalatorEnv():
     def act_space(self):
         return self.args.n_act
 
+    def print_reward(self):
+        reward = self.baseEnv.reward
+        print(end='\n')
+        for i in range(self.args.agent_num):
+            print("agent{label} reward:{reward}|".format(label=i, reward=reward[i]),end='')
+        print(end='\n')
 
 
 def get_args():
@@ -72,9 +79,10 @@ if __name__ == '__main__':
         action = np.random.choice(a=env.act_space, size=args.agent_num, replace=True, p=None)
         # print(action)
         env.render()
-        time.sleep(1)
+        time.sleep(0.1)
         obs, reward, done = env.step(action)
         if not (False in done):
-            print(reward)
-            print('===================================')
+            # print('reward',reward)
+            # print('========================================')
+            env.print_reward()
             obs, reward, done = env.reset()

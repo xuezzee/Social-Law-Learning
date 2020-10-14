@@ -39,26 +39,26 @@ class BaseEnv():
             self.agents[i]["position"] = [agents_position[label]//2, agents_position[label]%2]
             self.agents[i]["init_pos"] = agents_position[label]//2
 
-        self.agents = sorted(self.agents, key=lambda a: a['position'][0])
+        # self.agents = sorted(self.agents, key=lambda a: a['position'][0])
         self.time_step = 0
 
 
     def init_agents(self):
         labels = np.random.choice(a=self.agent_num, size=self.agent_num, replace=False, p=None)
         busy_agents = np.random.choice(a=self.agent_num, size=self.busy_num, replace=False, p=None)
+        self.reward = {}
         for i in range(len(self.agents)):
             a = self.agents[i]
             if i in busy_agents:
-                    a["state"] = "busy"
+                a["state"] = "busy"
             else:
                 a["state"] = "idle"
 
-            a["label"] = labels[i]
-            # a["position"] = (0,0)
+            a["label"] = i
             a["arrived"] = False
             a["reward"] = False
+            self.reward[labels[i]] = 0
 
-        self.reward = [0 for i in range(self.agent_num)]
 
     def check_superimposed(self):
         '''
@@ -139,7 +139,7 @@ class BaseEnv():
         for i in range(self.agent_num):
             a = self.agents[i]
             if a['state'] == 'busy' and a['arrived'] and self.reward[i] == 0:
-                self.reward[i] = self.length - self.time_step - a['init_pos']
+                self.reward[a['label']] = self.length - self.time_step - a['init_pos']
 
         return self.reward
 
@@ -156,7 +156,7 @@ class BaseEnv():
                 a["position"][0] = a["position"][0] + 1
                 if a["position"][0] >= self.length:
                     a["arrived"] = True
-                    print("{label}arrived,state:{state}".format(label=a['label'],state=a['state']))
+                    print("{label}arrived,state:{state},time_step:{}".format(label=a['label'],state=a['state'],time_step=self.time_step))
                 else:
                     self.escalator[tuple(a['position'])] = 'occupied'
 
@@ -172,7 +172,7 @@ class BaseEnv():
                 a['position'][0] = a['position'][0] + 1
                 if a['position'][0] >= self.length - 1:
                     a['arrived'] = True
-                    print("{label}arrived,state:{state}".format(label=a['label'],state=a['state']))
+                    print("{label}arrived,state:{state},time_step:{time_step}".format(label=a['label'],state=a['state'],time_step=self.time_step))
                 else:
                     self.escalator[tuple(a['position'])] = 'occupied'
 
@@ -256,3 +256,13 @@ class BaseEnv():
         fill_cell(self.length-1,1,'Purple')
 
         self.root.update()
+
+    def info(self, epoch=None):
+        print("==================================================================================")
+        print(" epoch:",epoch)
+        print(" numbur of agents:%d\n"%self.agent_num,
+              "length of escalator:%d\n"%(self.length-1),
+              "number of busy agents:%d"%self.busy_num)
+        print("----------------------------------------------------------------------------------")
+
+
