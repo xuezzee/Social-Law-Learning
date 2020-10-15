@@ -2,6 +2,8 @@ import gym
 import numpy as np
 import torch
 from algorithms.QLearning import QLearning
+from algorithms.ActorCritic import ActorCritic
+from algorithms.QLearningMOVersion import DQN
 import argparse
 from Logger import Logger
 
@@ -15,14 +17,15 @@ env = gym.make('CartPole-v0').unwrapped
 obs_space = env.observation_space
 n_act = 2
 n_obs = 4
-print(obs_space)
-print(dir(env))
+# print(obs_space)
+# print(dir(env))
 params = get_params()
 params.s_dim = n_obs
 params.a_dim = n_act
 params.epsilon = 0.9
 params.device = 'cpu'
-agent = QLearning(params)
+params.gamma = 0.9
+agent = ActorCritic(params)
 
 print(agent)
 
@@ -37,12 +40,18 @@ for ep in range(epoch):
         transition = []
         env.render()
         act = agent.choose_action(s[np.newaxis,:])
+        # print(act)
+        # act = agent.choose_action(s)
         s_, r, d, _ = env.step(act)
-        transition.append({"state": s, "action": act, "next_state": s_, "reward": r})
-        agent.store_transition(transition[0])
+        if d:
+            r = -10
+        transition.append({"state": s, "action": act, "next_state": s_, "reward": [r]})
+        # agent.store_transition(transition[0])
+        # agent.store_transition(s, act, r, s_)
         s = s_
+        agent.learn(transition[0])
+        # agent.learn()
         del transition
-        agent.learn()
         t_r += r
     print("reward:",t_r)
     logger.scalar_summary("reward", t_r, ep)

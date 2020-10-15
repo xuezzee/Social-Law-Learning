@@ -3,7 +3,7 @@ import argparse
 from env2.BaseEnv import BaseEnv
 from Logger import Logger
 
-logger = Logger('./log/log5')
+logger = Logger('./log/logAC1')
 
 class EscalatorEnv():
     def __init__(self, args):
@@ -45,6 +45,9 @@ class EscalatorEnv():
 
     def render(self):
         self.baseEnv._render()
+
+    def testMode(self):
+        s
 
     @property
     def obs_space(self):

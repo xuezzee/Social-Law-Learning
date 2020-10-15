@@ -118,7 +118,7 @@ class DQN(object):
 #             break
 #         s = s_
 
-class Agents():
+class DQNAgents():
     def __init__(self, params):
         self.params = params
         self.agents = [DQN(params) for i in range(params.n_agents)]

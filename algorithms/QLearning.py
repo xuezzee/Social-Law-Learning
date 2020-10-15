@@ -139,7 +139,7 @@ class QLearning():
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
 
-class Agents():
+class DQNAgents():
     def __init__(self, params):
         self.params = params
         self.agents = [QLearning(params) for i in range(params.n_agents)]
