@@ -30,14 +30,25 @@ class BaseEnv():
         self.escalator = np.full((self.length, 2), "empty***")
         shapeEsc = self.escalator.shape
         self.escalator = self.escalator.reshape(-1)
-        agents_position = np.random.choice(a=self.init_area, size=self.agent_num, replace=False, p=None) * 2
-        self.escalator[agents_position] = "occupied"
+        busy_agents_position = np.random.choice(a=self.busy_num, size=self.busy_num, replace=False, p=None) * 2
+        idle_agents_position = (np.random.choice(a=self.init_area-self.busy_num, size=self.agent_num-self.busy_num,
+                                                 replace=False, p=None) + self.busy_num) * 2
+        l = idle_agents_position + 3
+        self.escalator[np.concatenate((busy_agents_position, idle_agents_position), axis=-1)] = "occupied"
         self.escalator = self.escalator.reshape(shapeEsc)
 
+        busy_count = 0
+        idle_count = 0
         for i in range(self.agent_num):
             label = self.agents[i]["label"]
-            self.agents[i]["position"] = [agents_position[label]//2, agents_position[label]%2]
-            self.agents[i]["init_pos"] = agents_position[label]//2
+            if self.agents[i]['state'] == 'busy':
+                self.agents[i]["position"] = [busy_agents_position[busy_count]//2, busy_agents_position[busy_count]%2]
+                self.agents[i]["init_pos"] = busy_agents_position[busy_count]//2
+                busy_count += 1
+            else:
+                self.agents[i]["position"] = [idle_agents_position[idle_count]//2, idle_agents_position[idle_count]%2]
+                self.agents[i]["init_pos"] = idle_agents_position[idle_count]//2
+                idle_count += 1
 
         # self.agents = sorted(self.agents, key=lambda a: a['position'][0])
         self.time_step = 0
@@ -282,5 +293,13 @@ class BaseEnv():
               "length of escalator:%d\n"%(self.length-1),
               "number of busy agents:%d"%self.busy_num)
         print("----------------------------------------------------------------------------------")
+
+    def get_idle_agents(self):
+        labels = []
+        for agent in self.agents:
+            if agent['state'] == 'idle':
+                labels.append(agent['label'])
+
+        return labels
 
 
