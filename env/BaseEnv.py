@@ -128,10 +128,20 @@ class BaseEnv():
                 self.escalator[tuple(npos)] = "occupied"
 
     def reward_cal(self, a):
+        '''
+        To calculate the reward each agent should receive
+        :param a: an realized agent
+        :return: the reward one (all) agent should receive
+        '''
         # if a['state'] == "busy":
         pass
 
     def auto_proceed(self):
+        '''
+        since it's a escalator env, agents should be able to proceed
+        forward automatically along with the move of the escalator.
+        :return: None
+        '''
         del self.escalator
         self.escalator = np.full((self.length, 2), 'empty***')
         for a in self.agents:

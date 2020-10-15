@@ -1,6 +1,7 @@
 import numpy as np
 import argparse
 import tkinter
+import copy
 
 ACTIONS = {0:"left",
            1:"right",
@@ -18,14 +19,12 @@ class BaseEnv():
                         init_area (int)[the length of the area where agents can initate, smaller than the length]
         '''
         self.agent_num = args.agent_num
-        self.length = args.length
+        self.length = args.length + 1
         self.busy_num = args.busy_num
         self.init_area = args.init_area
         assert self.init_area > self.agent_num, "the initative area is not enough for all agents"
         self.agents = [{} for i in range(self.agent_num)]
         self.root = None
-        # self.init_agents()
-        # self.init_escalator()
 
     def init_escalator(self):
         self.escalator = np.full((self.length, 2), "empty***")
@@ -38,24 +37,30 @@ class BaseEnv():
         for i in range(self.agent_num):
             label = self.agents[i]["label"]
             self.agents[i]["position"] = [agents_position[label]//2, agents_position[label]%2]
+            self.agents[i]["init_pos"] = agents_position[label]//2
 
-        self.agents = sorted(self.agents, key=lambda a: a['position'][0])
+        # self.agents = sorted(self.agents, key=lambda a: a['position'][0])
+        self.time_step = 0
 
 
     def init_agents(self):
         labels = np.random.choice(a=self.agent_num, size=self.agent_num, replace=False, p=None)
         busy_agents = np.random.choice(a=self.agent_num, size=self.busy_num, replace=False, p=None)
+        self.reward = {}
+        self.rewardRec = {}
         for i in range(len(self.agents)):
             a = self.agents[i]
             if i in busy_agents:
-                    a["state"] = "busy"
+                a["state"] = "busy"
             else:
                 a["state"] = "idle"
 
-            a["label"] = labels[i]
-            # a["position"] = (0,0)
+            a["label"] = i
             a["arrived"] = False
             a["reward"] = False
+            self.reward[labels[i]] = 0
+            self.rewardRec[labels[i]] = 0
+
 
     def check_superimposed(self):
         '''
@@ -127,11 +132,28 @@ class BaseEnv():
                 self.agents[i]["position"] = npos
                 self.escalator[tuple(npos)] = "occupied"
 
-    def reward_cal(self, a):
-        # if a['state'] == "busy":
-        pass
+    def reward_cal(self):
+        '''
+        To calculate the reward each agent should receive
+        :param a: an realized agent
+        :return: the reward one (all) agent should receive
+        '''
+        for i in range(self.agent_num):
+            a = self.agents[i]
+            if a['state'] == 'busy' and a['arrived'] and self.rewardRec[i] == 0:
+                self.reward[a['label']] = self.length - self.time_step - a['init_pos']
+                self.rewardRec[a['label']] = self.reward[a['label']]
+            elif a['arrived'] and self.reward[i] != 0:
+                self.reward[a['label']] = 0
+
+        return self.reward
 
     def auto_proceed(self):
+        '''
+        since it's a escalator env, agents should be able to proceed
+        forward automatically along with the move of the escalator.
+        :return: None
+        '''
         del self.escalator
         self.escalator = np.full((self.length, 2), 'empty***')
         for a in self.agents:
@@ -139,10 +161,37 @@ class BaseEnv():
                 a["position"][0] = a["position"][0] + 1
                 if a["position"][0] >= self.length:
                     a["arrived"] = True
-                    print("{label}arrived,state:{state}".format(label=a['label'],state=a['state']))
+                    print("{label}arrived,state:{state},time_step:{}".format(label=a['label'],state=a['state'],time_step=self.time_step))
                 else:
                     self.escalator[tuple(a['position'])] = 'occupied'
 
+    def auto_proceed2(self):
+        '''
+        not finished yet, the second version of the auto_proceed
+        :return: None
+        '''
+        del self.escalator
+        self.escalator = np.full((self.length, 2), 'empty***')
+        for a in self.agents:
+            if a['arrived'] == False:
+                a['position'][0] = a['position'][0] + 1
+                if a['position'][0] >= self.length - 1:
+                    a['arrived'] = True
+                    print("agent{label} arrived, state:{state}, time_step:{time_step}".format(label=a['label'],state=a['state'],time_step=self.time_step))
+                else:
+                    self.escalator[tuple(a['position'])] = 'occupied'
+
+        for a in self.agents:
+            if a['arrived'] == False and a['state'] == 'busy':
+                if self.escalator[(a['position'][0]+1, a['position'][1])] == 'empty***':
+                    last_pos = copy.deepcopy(a['position'])
+                    a['position'][0] = a['position'][0] + 1
+                    if a['position'][0] >= self.length:
+                        a['arrived'] = True
+                        print("{label}arrived,state:{state}".format(label=a['label'],state=a['state']))
+                    else:
+                        self.escalator[tuple(a['position'])] = 'occupied'
+                        self.escalator[tuple(last_pos)] = 'empty***'
 
 
     @property
@@ -153,7 +202,10 @@ class BaseEnv():
         return temp.reshape(-1, 2)
 
     def get_agent_pos(self, index):
-        return np.array(self.agents[index]['position'])
+        escalator = np.full(self.escalator.shape, 0)
+        if not (self.agents[index]['position'][0] > 20):
+            escalator[self.agents[index]['position']] = 1
+        return escalator
 
     @property
     def done_info(self):
@@ -208,4 +260,17 @@ class BaseEnv():
             if a['state'] == 'busy':
                 fill_cell(a['position'][0],a['position'][1],'Red')
 
+        fill_cell(self.length-1,0,'Purple')
+        fill_cell(self.length-1,1,'Purple')
+
         self.root.update()
+
+    def info(self, epoch=None):
+        print("==================================================================================")
+        print(" epoch:",epoch)
+        print(" numbur of agents:%d\n"%self.agent_num,
+              "length of escalator:%d\n"%(self.length-1),
+              "number of busy agents:%d"%self.busy_num)
+        print("----------------------------------------------------------------------------------")
+
+
