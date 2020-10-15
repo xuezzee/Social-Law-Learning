@@ -1,6 +1,9 @@
 import numpy as np
 import argparse
 from env2.BaseEnv import BaseEnv
+from Logger import Logger
+
+logger = Logger('./log/log4')
 
 class EscalatorEnv():
     def __init__(self, args):
@@ -16,8 +19,7 @@ class EscalatorEnv():
         self.baseEnv.info(epoch=epoch)
         for i in range(self.args.agent_num):
             print('%d init_pos:'%self.baseEnv.agents[i]['label'], self.baseEnv.agents[i]['init_pos'])
-
-        obs = [np.concatenate((state.reshape(-1), get_pos(index), get_Astate(index))) for index in range(self.args.agent_num)]
+        obs = [np.concatenate((state.reshape(-1), get_pos(index).reshape(-1), get_Astate(index))) for index in range(self.args.agent_num)]
         done = self.baseEnv.done_info
         # reward = self.cal_reward()
         reward = [0 for i in range(self.args.agent_num)]  #temporarily
@@ -35,7 +37,7 @@ class EscalatorEnv():
         get_pos = self.baseEnv.get_agent_pos
         get_Astate = self.baseEnv.agent_state
 
-        obs = [np.concatenate((state.reshape(-1), get_pos(index), get_Astate(index))) for index in range(self.args.agent_num)]
+        obs = [np.concatenate((state.reshape(-1), get_pos(index).reshape(-1), get_Astate(index))) for index in range(self.args.agent_num)]
         done = self.baseEnv.done_info
         reward = self.cal_reward()
 
@@ -46,18 +48,20 @@ class EscalatorEnv():
 
     @property
     def obs_space(self):
-        return ((self.args.length+1) * 2 + 3,)
+        return ((self.args.length+1) * 4 + 1,)
 
     @property
     def act_space(self):
         return self.args.n_act
 
-    def print_reward(self):
+    def print_reward(self, epoch):
         reward = self.baseEnv.rewardRec
         print(end='\n')
         for i in range(self.args.agent_num):
             print("agent{label}:{reward}|".format(label=i, reward=reward[i]),end='')
         print(end='\n')
+        print("total reward:", sum(reward.values()),end='\n')
+        logger.scalar_summary("total reward", sum(reward.values()), epoch)
 
 
 def get_args():

@@ -202,7 +202,10 @@ class BaseEnv():
         return temp.reshape(-1, 2)
 
     def get_agent_pos(self, index):
-        return np.array(self.agents[index]['position'])
+        escalator = np.full(self.escalator.shape, 0)
+        if not (self.agents[index]['position'][0] > 20):
+            escalator[self.agents[index]['position']] = 1
+        return escalator
 
     @property
     def done_info(self):

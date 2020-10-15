@@ -25,10 +25,10 @@ class ReplayBuffer():
         :return: None
         '''
         if self.pointer == self.capacity:
-            self.memory['state'] = np.roll(self.memory['state'], shift=1, axis=0)
-            self.memory['action'] = np.roll(self.memory['action'], shift=1, axis=0)
-            self.memory['next_state'] = np.roll(self.memory['next_state'], shift=1, axis=0)
-            self.memory['reward'] = np.roll(self.memory['reward'], shift=1, axis=0)
+            self.memory['state'] = np.roll(self.memory['state'], shift=-1, axis=0)
+            self.memory['action'] = np.roll(self.memory['action'], shift=-1, axis=0)
+            self.memory['next_state'] = np.roll(self.memory['next_state'], shift=-1, axis=0)
+            self.memory['reward'] = np.roll(self.memory['reward'], shift=-1, axis=0)
             self.pointer -= 1
 
         self.memory['state'][range(self.pointer, self.pointer+1)] = np.array(transition['state'])
@@ -72,12 +72,15 @@ class Q_Net(nn.Module):
         self.linear1 = nn.Linear(self.s_dim, self.h_dim)
         self.linear2 = nn.Linear(self.h_dim, self.h_dim)
         self.linear3 = nn.Linear(self.h_dim, self.a_dim)
+        self.linear1.weight.data.normal_(0, 0.1)
+        self.linear2.weight.data.normal_(0, 0.1)
+        self.linear3.weight.data.normal_(0, 0.1)
 
     def forward(self, input):
         x = self.convert_type(input)
         x = torch.relu(self.linear1(x))
         x = torch.relu(self.linear2(x))
-        x = torch.relu(self.linear3(x))
+        x = self.linear3(x)
 
         return x
 
@@ -94,11 +97,13 @@ class QLearning():
     def __init__(self, params):
         self.params = params
         self.epsilon = params.epsilon
+        self.gamma = 0.9
         self.policy_net = Q_Net(params.s_dim, params.a_dim, device=params.device, epsilon=params.epsilon).to(params.device)
         self.target_net = Q_Net(params.s_dim, params.a_dim, device=params.device, epsilon=params.epsilon).to(params.device)
-        self.optim = torch.optim.Adam(self.policy_net.parameters(), lr=0.001)
-        self.scheduler_lr = torch.optim.lr_scheduler.StepLR(self.optim, 1000, gamma=0.9, last_epoch=-1)
-        self.replay_buffer = ReplayBuffer(1000, params)
+        self.optim = torch.optim.Adam(self.policy_net.parameters(), lr=0.01)
+        self.scheduler_lr = torch.optim.lr_scheduler.StepLR(self.optim, 100, gamma=0.9, last_epoch=-1)
+        self.replay_buffer = ReplayBuffer(2000, params)
+        self.test_loss = nn.MSELoss()
 
     def choose_action(self, state):
         q_value = self.policy_net(state)
@@ -117,16 +122,19 @@ class QLearning():
         if self.replay_buffer.pointer > 10:
             sample = self.replay_buffer.sample(10)
             q_value = self.policy_net(sample['state'])
-            q_value = torch.max(q_value, dim=-1)[0]
+            action = torch.autograd.Variable(torch.LongTensor(sample['action']))
+            q_value = q_value.gather(-1, action)
             q_value_ = self.target_net(sample['next_state'])
             q_value_ = torch.max(q_value_, dim=-1)[0]
-            error = q_value - (q_value_ + torch.Tensor(sample['reward']).T)
-            loss = error.square().mean()
+            error = q_value - (self.gamma * q_value_ + torch.Tensor(sample['reward']).T).detach()
+            loss = error.square()
+            loss = loss.mean()
+            loss = self.test_loss(q_value, (self.gamma * q_value_ + torch.Tensor(sample['reward']).T).detach())
             self.optim.zero_grad()
             loss.backward()
             self.optim.step()
             self.scheduler_lr.step()
-            print("loss:",loss)
+            # print("loss:",loss)
 
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
@@ -152,3 +160,5 @@ class Agents():
     def store_transitions(self, transitions):
         for i in range(self.params.n_agents):
             self.agents[i].store_transition(transitions[i])
+
+
