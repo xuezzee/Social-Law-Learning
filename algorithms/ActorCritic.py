@@ -66,3 +66,4 @@ class ActorCritic():
 
     def choose_action(self, state):
         prob = self.actor(state)
+

@@ -36,6 +36,7 @@ def main():
     get_envSetting(params, env)
     agents = Agents(params)
     for ep in range(params.epoch):
+        ep_reward = 0
         state, reward, done = env.reset(epoch=ep)
         while (False in done):
             # time.sleep(0.1)
@@ -43,13 +44,15 @@ def main():
             transition = []
             action = agents.choose_action(state)
             next_state, reward, done = env.step(action)
+            ep_reward = ep_reward + sum(reward.values())
             for i in range(params.n_agents):
                 transition.append({"state":state[i], "action":action[i], "next_state":next_state[i], "reward":reward[i]})
             agents.store_transitions(transition)
             state = next_state
             del transition
             agents.learn()
-        env.print_reward(ep)
+        env.print_reward(ep, ep_reward)
+        # print("ep_reward:", ep_reward)
 
 if __name__ == '__main__':
     main()
