@@ -3,7 +3,7 @@ import argparse
 from env2.BaseEnv import BaseEnv
 from Logger import Logger
 
-logger = Logger('./log/log4')
+logger = Logger('./log/log5')
 
 class EscalatorEnv():
     def __init__(self, args):
@@ -27,7 +27,7 @@ class EscalatorEnv():
         return obs, reward, done
 
     def cal_reward(self):
-        return self.baseEnv.reward_cal()
+        return self.baseEnv._reward_cal2()
 
     def step(self, actions):
         self.baseEnv.time_step += 1
@@ -54,14 +54,18 @@ class EscalatorEnv():
     def act_space(self):
         return self.args.n_act
 
-    def print_reward(self, epoch):
-        reward = self.baseEnv.rewardRec
-        print(end='\n')
-        for i in range(self.args.agent_num):
-            print("agent{label}:{reward}|".format(label=i, reward=reward[i]),end='')
-        print(end='\n')
-        print("total reward:", sum(reward.values()),end='\n')
-        logger.scalar_summary("total reward", sum(reward.values()), epoch)
+    def print_reward(self, epoch, reward=None):
+        if reward != None:
+            logger.scalar_summary("total reward", reward, epoch)
+            print("ep_reward:",reward)
+        else:
+            reward = self.baseEnv.rewardRec
+            print(end='\n')
+            for i in range(self.args.agent_num):
+                print("agent{label}:{reward}|".format(label=i, reward=reward[i]),end='')
+            print(end='\n')
+            print("total reward:", sum(reward.values()),end='\n')
+            logger.scalar_summary("total reward", sum(reward.values()), epoch)
 
 
 def get_args():

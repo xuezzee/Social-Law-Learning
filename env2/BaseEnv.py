@@ -148,6 +148,16 @@ class BaseEnv():
 
         return self.reward
 
+    def _reward_cal2(self):
+        for i in range(self.agent_num):
+            a = self.agents[i]
+            if a['state'] == 'busy':
+                self.reward[a['label']] = -1
+            if a['arrived'] and self.reward[i] != 0:
+                self.reward[a['label']] = 0
+
+        return self.reward
+
     def auto_proceed(self):
         '''
         since it's a escalator env, agents should be able to proceed
