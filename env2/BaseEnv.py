@@ -33,7 +33,6 @@ class BaseEnv():
         busy_agents_position = np.random.choice(a=self.busy_num, size=self.busy_num, replace=False, p=None) * 2
         idle_agents_position = (np.random.choice(a=self.init_area-self.busy_num, size=self.agent_num-self.busy_num,
                                                  replace=False, p=None) + self.busy_num) * 2
-        l = idle_agents_position + 3
         self.escalator[np.concatenate((busy_agents_position, idle_agents_position), axis=-1)] = "occupied"
         self.escalator = self.escalator.reshape(shapeEsc)
 
@@ -160,6 +159,10 @@ class BaseEnv():
         return self.reward
 
     def _reward_cal2(self):
+        '''
+        Second Version of calculating reward. Each time step, a busy agent will receive a reward of -1
+        :return: the reward of all agents
+        '''
         for i in range(self.agent_num):
             a = self.agents[i]
             if a['state'] == 'busy':
@@ -188,7 +191,8 @@ class BaseEnv():
 
     def auto_proceed2(self):
         '''
-        not finished yet, the second version of the auto_proceed
+        The second version of the auto_proceed. Each agent will firstly proceed one step,
+        then busy agents will move forward one step additionally
         :return: None
         '''
         del self.escalator
@@ -223,6 +227,11 @@ class BaseEnv():
         return temp.reshape(-1, 2)
 
     def get_agent_pos(self, index):
+        '''
+        The method will return the position of the required agent in the form that is similar with the state
+        :param index: the index of the agent that is queried (int)
+        :return: the position of the agent with respect to the index
+        '''
         escalator = np.full(self.escalator.shape, 0)
         if not (self.agents[index]['position'][0] > 20):
             escalator[self.agents[index]['position']] = 1
@@ -233,6 +242,11 @@ class BaseEnv():
         return [agent['arrived'] for agent in self.agents]
 
     def agent_state(self, index):
+        '''
+        To query whether a agent is in the state of "busy" or "idle"
+        :param index: the index of a agent (int)
+        :return: the state of the queried agent (0 represents idle, 1 represents busy)
+        '''
         state = self.agents[index]['state']
         if state == 'busy':
             return np.array((1,))
