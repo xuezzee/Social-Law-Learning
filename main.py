@@ -18,7 +18,7 @@ def get_args():
 
 def get_params():
     parser = argparse.ArgumentParser(description="parameters of agents")
-    parser.add_argument("--algorithm", type=str, default='AC')
+    parser.add_argument("--algorithm", type=str, default='DQN')
     parser.add_argument("--epsilon", type=float, default=0.9)
     parser.add_argument("--epoch", type=int, default=1000)
     parser.add_argument("--n_agents", type=int, default=13)
@@ -48,13 +48,14 @@ def main():
                 transition = []
                 action = agents.choose_action(state)
                 next_state, reward, done = env.step(action)
+                # next_state, reward, done = env.testMode(action)
                 ep_reward = ep_reward + sum(reward.values())
                 for i in range(params.n_agents):
                     transition.append({"state":state[i], "action":action[i], "next_state":next_state[i], "reward":reward[i]})
                 agents.store_transitions(transition)
                 state = next_state
-                del transition
                 agents.learn()
+                del transition
             env.print_reward(ep, ep_reward)
 
     elif params.algorithm == "AC":
@@ -63,7 +64,7 @@ def main():
             ep_reward = 0
             state, reward, done = env.reset(epoch=ep)
             while (False in done):
-                # time.sleep(0.3)
+                # time.sleep(0.2)
                 env.render()
                 transition = []
                 action = agents.choose_action(state)

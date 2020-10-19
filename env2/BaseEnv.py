@@ -234,7 +234,7 @@ class BaseEnv():
         '''
         escalator = np.full(self.escalator.shape, 0)
         if not (self.agents[index]['position'][0] > 20):
-            escalator[self.agents[index]['position']] = 1
+            escalator[self.agents[index]["position"][0], self.agents[index]["position"][1]] = 1
         return escalator
 
     @property
