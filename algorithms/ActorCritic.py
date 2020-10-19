@@ -14,8 +14,11 @@ class Actor(nn.Module):
 
     def build_network(self):
         self.linear1 = nn.Linear(self.s_dim, self.h_dim)
+        self.linear1.weight.data.normal_(0, 0.1)
         self.linear2 = nn.Linear(self.h_dim, self.h_dim)
+        self.linear2.weight.data.normal_(0, 0.1)
         self.linear3 = nn.Linear(self.h_dim, self.a_dim)
+        self.linear3.weight.data.normal_(0, 0.1)
 
     def forward(self, input):
         x = self.convert_type(input)
@@ -42,8 +45,11 @@ class Critic(nn.Module):
 
     def build_network(self):
         self.linear1 = nn.Linear(self.s_dim, self.h_dim)
+        self.linear1.weight.data.normal_(0, 0.1)
         self.linear2 = nn.Linear(self.h_dim, self.h_dim)
+        self.linear2.weight.data.normal_(0, 0.1)
         self.linear3 = nn.Linear(self.h_dim, 1)
+        self.linear3.weight.data.normal_(0, 0.1)
 
     def forward(self, input):
         x = self.convert_type(input)
@@ -66,8 +72,8 @@ class ActorCritic():
         self.critic = Critic(params.s_dim, params.a_dim, device=params.device).to(self.device)
         self.optim = {'optA':torch.optim.Adam(self.actor.parameters(), lr=0.0001),
                       'optC':torch.optim.Adam(self.critic.parameters(), lr=0.001)}
-        self.lr_scheduler = {'lrA':torch.optim.lr_scheduler.StepLR(self.optim['optA'], 1000, 1, last_epoch=-1),
-                             'lrC':torch.optim.lr_scheduler.StepLR(self.optim['optC'], 1000, 1, last_epoch=-1)}
+        self.lr_scheduler = {'lrA':torch.optim.lr_scheduler.StepLR(self.optim['optA'], 300, 1, last_epoch=-1),
+                             'lrC':torch.optim.lr_scheduler.StepLR(self.optim['optC'], 300, 1, last_epoch=-1)}
 
     def choose_action(self, state):
         self.prob = self.actor(state)
@@ -85,10 +91,16 @@ class ActorCritic():
         return td_err
 
     def learnActor(self, transition, td_err):
+        def entropy(dist):
+            ent = 0
+            for p in dist:
+                ent -= p * torch.log(p)
+            return ent
+
         td_err = td_err.detach()
         # log_prob = torch.log(self.prob[0][transition['action']])
         log_prob = torch.log(self.prob[transition['action']])
-        loss = -(log_prob * td_err)
+        loss = (log_prob * td_err) - 0.001 * entropy(self.prob)
         self.optim["optA"].zero_grad()
         loss.backward()
         self.optim["optA"].step()

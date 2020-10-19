@@ -3,7 +3,7 @@ import argparse
 from env2.BaseEnv import BaseEnv, Base_original
 from Logger import Logger
 
-logger = Logger('./log/logAC5NotLearn')
+logger = Logger('./log/logDQNLearn2')
 
 class EscalatorEnv():
     def __init__(self, args):

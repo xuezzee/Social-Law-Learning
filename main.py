@@ -10,7 +10,7 @@ import time
 def get_args():
     parser = argparse.ArgumentParser(description="arguments of the environment")
     parser.add_argument("--agent_num", type=int, default=5)
-    parser.add_argument("--length", type=int, default=8)
+    parser.add_argument("--length", type=int, default=19)
     parser.add_argument("--busy_num", type=int, default=2)
     parser.add_argument("--init_area", type=int, default=5)
     parser.add_argument("--n_act", type=int, default=3)
@@ -18,7 +18,7 @@ def get_args():
 
 def get_params():
     parser = argparse.ArgumentParser(description="parameters of agents")
-    parser.add_argument("--algorithm", type=str, default='DQN')
+    parser.add_argument("--algorithm", type=str, default='AC')
     parser.add_argument("--epsilon", type=float, default=0.9)
     parser.add_argument("--epoch", type=int, default=1000)
     parser.add_argument("--n_agents", type=int, default=5)
@@ -45,13 +45,14 @@ def main():
             ep_reward = 0
             state, reward, done = env.reset(epoch=ep)
             # while (False in done):
-            while time_step <= 300:
-                # time.sleep(0.3)
+            while time_step <= 100:
+                if ep >= 80:
+                    time.sleep(0.15)
                 env.render()
                 transition = []
                 action = agents.choose_action(state)
-                next_state, reward, done = env.step(action)
-                # next_state, reward, done = env.testMode(action)
+                # next_state, reward, done = env.step(action)
+                next_state, reward, done = env.testMode(action)
                 ep_reward = ep_reward + sum(reward.values())
                 for i in range(params.n_agents):
                     transition.append({"state":state[i], "action":action[i], "next_state":next_state[i], "reward":reward[i]})
@@ -65,10 +66,13 @@ def main():
     elif params.algorithm == "AC":
         agents = ACAgents(params)
         for ep in range(params.epoch):
+            time_step = 0
             ep_reward = 0
             state, reward, done = env.reset(epoch=ep)
-            while (False in done):
-                # time.sleep(0.2)
+            # while (False in done):
+            while time_step <= 100:
+                if ep >= 80:
+                    time.sleep(0.15)
                 env.render()
                 transition = []
                 action = agents.choose_action(state)
@@ -81,6 +85,7 @@ def main():
                 state = next_state
                 agents.learn(transition)
                 del transition
+                time_step += 1
             env.print_reward(ep, ep_reward)
 
 

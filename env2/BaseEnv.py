@@ -22,7 +22,7 @@ class BaseEnv():
         self.length = args.length + 1
         self.busy_num = args.busy_num
         self.init_area = args.init_area
-        assert self.init_area > self.agent_num, "the initative area is not enough for all agents"
+        assert self.init_area >= self.agent_num, "the initative area is not enough for all agents"
         self.agents = [{} for i in range(self.agent_num)]
         self.root = None
 
