@@ -338,7 +338,6 @@ class BaseEnv():
                 rgb_img[a["position"][0], a["position"][1]] = COLOR["red"]
         plt.imshow(rgb_img)
         plt.savefig(filename+"%d.jpg"%self.saveNum)
-        # plt.show()
         self.saveNum += 1
 
 
