@@ -97,7 +97,7 @@ class BaseEnv():
             if action == "right":
                 npos = [cpos[0], cpos[1] + 1]
                 return npos
-            if action == "proceed" and agent['state'] == 'busy':
+            if action == "proceed":
                 npos = [cpos[0] + 1, cpos[1]]
                 return npos
             if action == "stay":
@@ -317,3 +317,118 @@ class BaseEnv():
         return labels
 
 
+'''
+------------------------------------------------------
+The original version of escalator environment
+------------------------------------------------------
+'''
+
+
+class Base_original(BaseEnv):
+    def __init__(self, args):
+        super().__init__(args=args)
+
+
+    def change_position(self, action):
+        '''
+        execute the an agent's chosen action
+        :param action: a tuple or list of agents' actions
+        :return: None
+        '''
+        def next_pos(agent, action, i=None):
+            cpos = agent["position"]   #get the current position of the given agent
+            if action == "left":
+                npos = [cpos[0], cpos[1] - 1]
+                return npos
+            if action == "right":
+                npos = [cpos[0], cpos[1] + 1]
+                return npos
+            if action == "proceed":
+                npos = [cpos[0] + 1, cpos[1]]
+                if npos[0] >= self.length:
+                    npos[0] -= self.length
+                    if agent["state"] == "busy":
+                        self.agents[i]["state"] = "idle"
+                    else:
+                        self.agents[i]["state"] = "busy"
+                return npos
+            if action == "stay":
+                npos = cpos
+                return npos
+
+        def rew(agent, action):
+            if agent["state"] == "busy":
+                if action == "proceed":
+                    return 1
+                else:
+                    return 0
+            if agent["state"] == "idle":
+                if action == "proceed":
+                    return -1
+                else:
+                    return 0
+
+        for i in range(len(self.agents)):
+            if self.check_valid(action[i], self.agents[i]):
+                self.reward[i] = rew(self.agents[i], ACTIONS[action[i]])
+                self.escalator[tuple(self.agents[i]['position'])] = 'empty***'
+                npos = next_pos(self.agents[i], ACTIONS[action[i]])
+                self.agents[i]["position"] = npos
+                self.escalator[tuple(npos)] = "occupied"
+            else:
+                self.reward[i] = 0
+
+    def auto_proceed(self):
+        '''
+        since it's a escalator env, agents should be able to proceed
+        forward automatically along with the move of the escalator.
+        :return: None
+        '''
+        del self.escalator
+        self.escalator = np.full((self.length, 2), 'empty***')
+        for a in self.agents:
+            if a['arrived'] == False:
+                a["position"][0] = a["position"][0] + 1
+                if a["position"][0] >= self.length:
+                    a["position"][0] -= self.length
+                    if a["state"] == "busy":
+                        a["state"] = "idle"
+                    else:
+                        a["state"] = "busy"
+                else:
+                    self.escalator[tuple(a['position'])] = 'occupied'
+
+    def check_valid(self, action, agent):
+        '''
+        to check if the action of an agent is valid, which is to check is the next
+        the postion that the agent is going has already been occupied by others
+        :param action: the current action of an given agent
+        :return: True or False
+        '''
+        def next_pos(agent, action):
+            cpos = agent["position"]   #get the current position of the given agent
+            if action == "left":
+                npos = [cpos[0], cpos[1] - 1]
+                return npos
+            if action == "right":
+                npos = [cpos[0], cpos[1] + 1]
+                return npos
+            if action == "proceed":
+                npos = [cpos[0] + 1, cpos[1]]
+                if npos[0] >= self.length:
+                    npos[0] -= self.length
+                return npos
+            if action == "stay":
+                npos = cpos
+                return npos
+            return cpos
+
+        next_position = next_pos(agent, ACTIONS[action])
+        if agent['position'][0]<self.length-1 and next_position[1]>=0 and \
+                next_position[1]<=1 and self.escalator[tuple(next_position)] != 'occupied':
+            return True
+        else:
+            return False
+
+    def reward_cal(self):
+        return self.reward

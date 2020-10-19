@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from env2.Escalator import EscalatorEnv
+from env2.Escalator import EscalatorEnv, Escalator_original
 # from algorithms.QLearning import Agents
 from algorithms.QLearningMOVersion import DQNAgents
 from algorithms.ActorCritic import ACAgents
@@ -9,11 +9,11 @@ import time
 
 def get_args():
     parser = argparse.ArgumentParser(description="arguments of the environment")
-    parser.add_argument("--agent_num", type=int, default=13)
-    parser.add_argument("--length", type=int, default=25)
-    parser.add_argument("--busy_num", type=int, default=3)
-    parser.add_argument("--init_area", type=int, default=15)
-    parser.add_argument("--n_act", type=int, default=2)
+    parser.add_argument("--agent_num", type=int, default=5)
+    parser.add_argument("--length", type=int, default=8)
+    parser.add_argument("--busy_num", type=int, default=2)
+    parser.add_argument("--init_area", type=int, default=5)
+    parser.add_argument("--n_act", type=int, default=3)
     return parser.parse_args()
 
 def get_params():
@@ -21,7 +21,7 @@ def get_params():
     parser.add_argument("--algorithm", type=str, default='DQN')
     parser.add_argument("--epsilon", type=float, default=0.9)
     parser.add_argument("--epoch", type=int, default=1000)
-    parser.add_argument("--n_agents", type=int, default=13)
+    parser.add_argument("--n_agents", type=int, default=5)
     parser.add_argument("--gamma", type=float, default=0.9)
     return parser.parse_args()
 
@@ -35,15 +35,18 @@ def get_envSetting(params, env):
 def main():
     args = get_args()
     params = get_params()
-    env = EscalatorEnv(args)
+    # env = EscalatorEnv(args)
+    env = Escalator_original(args)
     get_envSetting(params, env)
     if params.algorithm == "DQN":
         agents = DQNAgents(params)
         for ep in range(params.epoch):
+            time_step = 0
             ep_reward = 0
             state, reward, done = env.reset(epoch=ep)
-            while (False in done):
-                # time.sleep(0.1)
+            # while (False in done):
+            while time_step <= 300:
+                # time.sleep(0.3)
                 env.render()
                 transition = []
                 action = agents.choose_action(state)
@@ -56,6 +59,7 @@ def main():
                 state = next_state
                 agents.learn()
                 del transition
+                time_step += 1
             env.print_reward(ep, ep_reward)
 
     elif params.algorithm == "AC":

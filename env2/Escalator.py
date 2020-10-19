@@ -1,6 +1,6 @@
 import numpy as np
 import argparse
-from env2.BaseEnv import BaseEnv
+from env2.BaseEnv import BaseEnv, Base_original
 from Logger import Logger
 
 logger = Logger('./log/logAC5NotLearn')
@@ -72,6 +72,35 @@ class EscalatorEnv():
             print(end='\n')
             print("total reward:", sum(reward.values()),end='\n')
             logger.scalar_summary("total reward", sum(reward.values()), epoch)
+
+
+'''
+-------------------------------------------------------
+The original version of escalator environment
+-------------------------------------------------------
+'''
+
+class Escalator_original(EscalatorEnv):
+    def __init__(self, args):
+        super().__init__(args)
+        self.baseEnv = Base_original(args)
+
+    def cal_reward(self):
+        return self.baseEnv.reward_cal()
+
+    def step(self, actions):
+        self.baseEnv.time_step += 1
+        self.baseEnv.change_position(actions)
+        self.baseEnv.auto_proceed()
+        state = self.baseEnv.observation
+        get_pos = self.baseEnv.get_agent_pos
+        get_Astate = self.baseEnv.agent_state
+
+        obs = [np.concatenate((state.reshape(-1), get_pos(index).reshape(-1), get_Astate(index))) for index in range(self.args.agent_num)]
+        done = self.baseEnv.done_info
+        reward = self.cal_reward()
+
+        return obs, reward, done
 
 
 def get_args():
