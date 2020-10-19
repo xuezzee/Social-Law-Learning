@@ -73,6 +73,12 @@ class EscalatorEnv():
             print("total reward:", sum(reward.values()),end='\n')
             logger.scalar_summary("total reward", sum(reward.values()), epoch)
 
+    def save_img(self, filename=None):
+        if filename != None:
+            self.baseEnv.save_img(filename)
+        else:
+            self.baseEnv.save_img()
+
 
 '''
 -------------------------------------------------------

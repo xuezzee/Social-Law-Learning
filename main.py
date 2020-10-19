@@ -73,7 +73,8 @@ def main():
             while time_step <= 100:
                 if ep >= 80:
                     time.sleep(0.15)
-                env.render()
+                # env.render()
+                env.save_img()
                 transition = []
                 action = agents.choose_action(state)
                 # next_state, reward, done = env.step(action)

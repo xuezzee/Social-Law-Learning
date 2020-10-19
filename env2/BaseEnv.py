@@ -2,11 +2,17 @@ import numpy as np
 import argparse
 import tkinter
 import copy
+import matplotlib.pyplot as plt
+import cv2
 
 ACTIONS = {0:"left",
            1:"right",
            2:"proceed",
            3:"stay"}
+
+COLOR = {"grey":np.array([125, 125, 125]),
+         "green":np.array([0, 255, 0]),
+         "red":np.array([255, 0, 0])}
 
 class BaseEnv():
     def __init__(self, args):
@@ -25,6 +31,7 @@ class BaseEnv():
         assert self.init_area >= self.agent_num, "the initative area is not enough for all agents"
         self.agents = [{} for i in range(self.agent_num)]
         self.root = None
+        self.saveNum = 0
 
     def init_escalator(self):
         self.escalator = np.full((self.length, 2), "empty***")
@@ -315,6 +322,28 @@ class BaseEnv():
                 labels.append(agent['label'])
 
         return labels
+
+    def save_img(self, filename="/Users/xue/Desktop/saved_img/img"):
+        map = self.escalator
+        rgb_img = np.full((map.shape[0], map.shape[1], 3), 0)
+        for x in range(map.shape[0]):
+            for y in range(map.shape[1]):
+                if map[x,y] == "empty***":
+                    rgb_img[x,y] = COLOR["grey"]
+                elif map[x,y] == "occupied":
+                    rgb_img[x,y] = COLOR["green"]
+
+        for a in self.agents:
+            if a["state"] == "busy":
+                rgb_img[a["position"][0], a["position"][1]] = COLOR["red"]
+        plt.imshow(rgb_img)
+        plt.savefig(filename+"%d.jpg"%self.saveNum)
+        # plt.show()
+        self.saveNum += 1
+
+
+
+
 
 
 '''
