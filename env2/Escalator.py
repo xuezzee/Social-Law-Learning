@@ -3,7 +3,7 @@ import argparse
 from env2.BaseEnv import BaseEnv, Base_original
 from Logger import Logger
 
-logger = Logger('./log/logDQNLearn2')
+logger = Logger('/Users/xue/Desktop/logPC/logAC3')
 
 class EscalatorEnv():
     def __init__(self, args):
@@ -27,12 +27,12 @@ class EscalatorEnv():
         return obs, reward, done
 
     def cal_reward(self):
-        return self.baseEnv._reward_cal2()
+        return self.baseEnv._reward_cal3()
 
     def step(self, actions):
         self.baseEnv.time_step += 1
         self.baseEnv.change_position(actions)
-        self.baseEnv.auto_proceed2()
+        self.baseEnv.auto_proceed()
         state = self.baseEnv.observation
         get_pos = self.baseEnv.get_agent_pos
         get_Astate = self.baseEnv.agent_state

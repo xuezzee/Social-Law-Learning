@@ -3,6 +3,7 @@ import argparse
 import tkinter
 import copy
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import cv2
 
 ACTIONS = {0:"left",
@@ -64,6 +65,7 @@ class BaseEnv():
         labels = np.random.choice(a=self.agent_num, size=self.agent_num, replace=False, p=None)
         busy_agents = np.random.choice(a=self.agent_num, size=self.busy_num, replace=False, p=None)
         self.reward = {}
+        self.payoff = {}
         self.rewardRec = {}
         for i in range(len(self.agents)):
             a = self.agents[i]
@@ -77,6 +79,7 @@ class BaseEnv():
             a["reward"] = False
             self.reward[labels[i]] = 0
             self.rewardRec[labels[i]] = 0
+            self.payoff[labels[i]] = 0
 
 
     def check_superimposed(self):
@@ -144,10 +147,22 @@ class BaseEnv():
 
         for i in range(len(self.agents)):
             if self.check_valid(action[i], self.agents[i]):
+                if self.agents[i]['state'] == 'busy':
+                    if ACTIONS[action[i]] == "proceed":
+                        self.payoff[i] = 1
+                    else:
+                        self.payoff[i] = 0
+                else:
+                    if ACTIONS[action[i]] == "proceed":
+                        self.payoff[i] = -1
+                    else:
+                        self.payoff[i] = 0
                 self.escalator[tuple(self.agents[i]['position'])] = 'empty***'
                 npos = next_pos(self.agents[i], ACTIONS[action[i]])
                 self.agents[i]["position"] = npos
                 self.escalator[tuple(npos)] = "occupied"
+            else:
+                self.payoff[i] = 0
 
     def reward_cal(self):
         '''
@@ -178,6 +193,9 @@ class BaseEnv():
                 self.reward[a['label']] = 0
 
         return self.reward
+
+    def _reward_cal3(self):
+        return self.payoff
 
     def auto_proceed(self):
         '''
@@ -240,7 +258,7 @@ class BaseEnv():
         :return: the position of the agent with respect to the index
         '''
         escalator = np.full(self.escalator.shape, 0)
-        if not (self.agents[index]['position'][0] > 20):
+        if not (self.agents[index]['position'][0] >= self.length):
             escalator[self.agents[index]["position"][0], self.agents[index]["position"][1]] = 1
         return escalator
 
@@ -336,8 +354,9 @@ class BaseEnv():
         for a in self.agents:
             if a["state"] == "busy":
                 rgb_img[a["position"][0], a["position"][1]] = COLOR["red"]
-        plt.imshow(rgb_img)
-        plt.savefig(filename+"%d.jpg"%self.saveNum)
+        # plt.imshow(rgb_img)
+        # plt.savefig(filename+"%d.jpg"%self.saveNum)
+        mpimg.imsave(filename+"%d.jpg"%self.saveNum, rgb_img.astype(np.uint8))
         self.saveNum += 1
 
 

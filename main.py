@@ -9,10 +9,10 @@ import time
 
 def get_args():
     parser = argparse.ArgumentParser(description="arguments of the environment")
-    parser.add_argument("--agent_num", type=int, default=5)
-    parser.add_argument("--length", type=int, default=19)
-    parser.add_argument("--busy_num", type=int, default=2)
-    parser.add_argument("--init_area", type=int, default=5)
+    parser.add_argument("--agent_num", type=int, default=6)
+    parser.add_argument("--length", type=int, default=15)
+    parser.add_argument("--busy_num", type=int, default=3)
+    parser.add_argument("--init_area", type=int, default=6)
     parser.add_argument("--n_act", type=int, default=3)
     return parser.parse_args()
 
@@ -21,7 +21,7 @@ def get_params():
     parser.add_argument("--algorithm", type=str, default='AC')
     parser.add_argument("--epsilon", type=float, default=0.9)
     parser.add_argument("--epoch", type=int, default=1000)
-    parser.add_argument("--n_agents", type=int, default=5)
+    parser.add_argument("--n_agents", type=int, default=6)
     parser.add_argument("--gamma", type=float, default=0.9)
     return parser.parse_args()
 
@@ -35,8 +35,8 @@ def get_envSetting(params, env):
 def main():
     args = get_args()
     params = get_params()
-    # env = EscalatorEnv(args)
-    env = Escalator_original(args)
+    env = EscalatorEnv(args)
+    # env = Escalator_original(args)
     get_envSetting(params, env)
     if params.algorithm == "DQN":
         agents = DQNAgents(params)
@@ -44,18 +44,21 @@ def main():
             time_step = 0
             ep_reward = 0
             state, reward, done = env.reset(epoch=ep)
-            # while (False in done):
-            while time_step <= 100:
+            while (False in done):
+            # while time_step <= 100:
                 if ep >= 80:
                     time.sleep(0.15)
-                if time_step%1000 == 0:
-                    env.save_img()
+                # if time_step%1000 == 0:
+                #     env.save_img()
                 env.render()
                 transition = []
                 action = agents.choose_action(state)
                 # next_state, reward, done = env.step(action)
                 next_state, reward, done = env.testMode(action)
                 ep_reward = ep_reward + sum(reward.values())
+                # temp_rew = {}
+                # for i in range(len(reward.values())):
+                #     temp_rew[i] = sum(reward.values())
                 for i in range(params.n_agents):
                     transition.append({"state":state[i], "action":action[i], "next_state":next_state[i], "reward":reward[i]})
                 agents.store_transitions(transition)
@@ -71,13 +74,13 @@ def main():
             time_step = 0
             ep_reward = 0
             state, reward, done = env.reset(epoch=ep)
-            # while (False in done):
-            while time_step <= 100:
-                if ep >= 80:
-                    time.sleep(0.15)
-                if time_step%1000 == 0:
-                    env.save_img()
-                # env.render()
+            while (False in done):
+            # while time_step <= 100:
+            #     if ep >= 80:
+            #         time.sleep(0.15)
+                # if time_step%1000 == 0:
+                #     env.save_img()
+                env.render()
                 transition = []
                 action = agents.choose_action(state)
                 # next_state, reward, done = env.step(action)

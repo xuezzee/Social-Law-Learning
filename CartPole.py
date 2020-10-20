@@ -25,33 +25,38 @@ params.a_dim = n_act
 params.epsilon = 0.9
 params.device = 'cpu'
 params.gamma = 0.9
-agent = ActorCritic(params)
+agent = DQN(params)
 
 print(agent)
 
 epoch = 100000
-
+tot_step = 0
 for ep in range(epoch):
+    print("epoch:",ep, end=" ")
+    time_step = 0
     t_r = 0
     # transition = []
     s = env.reset()
     d = False
-    while not d:
+    while not d and time_step < 200:
         transition = []
         env.render()
-        act = agent.choose_action(s[np.newaxis,:])
+        # act = agent.choose_action(s[np.newaxis,:])
         # print(act)
-        # act = agent.choose_action(s)
+        act = agent.choose_action(s)
         s_, r, d, _ = env.step(act)
         if d:
             r = -10
         transition.append({"state": s, "action": act, "next_state": s_, "reward": [r]})
         # agent.store_transition(transition[0])
-        # agent.store_transition(s, act, r, s_)
+        agent.store_transition(s, act, r, s_)
         s = s_
-        agent.learn(transition[0])
-        # agent.learn()
+        # agent.learn(transition[0])
+        agent.learn()
         del transition
         t_r += r
-    print("reward:",t_r)
+        time_step += 1
+        tot_step+=1
+    print("reward:",t_r, end='')
+    print(" tot_step:", tot_step)
     logger.scalar_summary("reward", t_r, ep)
