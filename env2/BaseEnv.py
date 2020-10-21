@@ -210,7 +210,7 @@ class BaseEnv():
                 a["position"][0] = a["position"][0] + 1
                 if a["position"][0] >= self.length:
                     a["arrived"] = True
-                    print("{label}arrived,state:{state},time_step:{}".format(label=a['label'],state=a['state'],time_step=self.time_step))
+                    # print("{label}arrived,state:{state},time_step:{}".format(label=a['label'],state=a['state'],time_step=self.time_step))
                 else:
                     self.escalator[tuple(a['position'])] = 'occupied'
 

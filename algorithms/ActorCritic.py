@@ -2,6 +2,8 @@ import torch
 import numpy as np
 from torch import nn
 from torch.distributions import Categorical
+import sys
+from pathlib import Path
 
 class Actor(nn.Module):
     def __init__(self, s_dim, a_dim, h_dim=128, device='cpu'):
@@ -72,8 +74,8 @@ class ActorCritic():
         self.critic = Critic(params.s_dim, params.a_dim, device=params.device).to(self.device)
         self.optim = {'optA':torch.optim.Adam(self.actor.parameters(), lr=0.0001),
                       'optC':torch.optim.Adam(self.critic.parameters(), lr=0.001)}
-        self.lr_scheduler = {'lrA':torch.optim.lr_scheduler.StepLR(self.optim['optA'], 300, 1, last_epoch=-1),
-                             'lrC':torch.optim.lr_scheduler.StepLR(self.optim['optC'], 300, 1, last_epoch=-1)}
+        self.lr_scheduler = {'lrA':torch.optim.lr_scheduler.StepLR(self.optim['optA'], 1000, 0.99, last_epoch=-1),
+                             'lrC':torch.optim.lr_scheduler.StepLR(self.optim['optC'], 1000, 0.99, last_epoch=-1)}
 
     def choose_action(self, state):
         self.prob = self.actor(state)
@@ -138,5 +140,28 @@ class ACAgents():
         for i in range(self.params.n_agents):
             agent = self.agents[i]
             agent.learn(transition=transition[i])
+
+    def save(self, ep, path="./model"):
+        print("model is saving")
+        state = {}
+        for i in range(self.params.n_agents):
+            state["actor%d"%i] = self.agents[i].actor.state_dict()
+            state["critic%d" % i] = self.agents[i].critic.state_dict()
+            state["optA%d"%i] = self.agents[i].optim["optA"].state_dict()
+            state["optC%d"%i] = self.agents[i].optim["optC"].state_dict()
+        state["epoch"] = ep
+        state["agent_num"] = self.params.n_agents
+        torch.save(state, path+"model.pth")
+        print("model finishes saving")
+
+    def load(self, path="./model/"):
+        state = torch.load(path+"model.pth")
+        for i in range(self.params.n_agents):
+            self.agents[i].actor.load_state_dict(state["actor%d"%i])
+            self.agents[i].critic.load_state_dict(state["critic%d"%i])
+            self.agents[i].optim["optA"].load_state_dict(state["optA%d"%i])
+            self.agents[i].optim["optC"].load_state_dict(state["optC%d"%i])
+        return state["epoch"]
+
 
 

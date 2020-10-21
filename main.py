@@ -9,10 +9,10 @@ import time
 
 def get_args():
     parser = argparse.ArgumentParser(description="arguments of the environment")
-    parser.add_argument("--agent_num", type=int, default=6)
-    parser.add_argument("--length", type=int, default=15)
-    parser.add_argument("--busy_num", type=int, default=3)
-    parser.add_argument("--init_area", type=int, default=6)
+    parser.add_argument("--agent_num", type=int, default=8)
+    parser.add_argument("--length", type=int, default=20)
+    parser.add_argument("--busy_num", type=int, default=4)
+    parser.add_argument("--init_area", type=int, default=8)
     parser.add_argument("--n_act", type=int, default=3)
     return parser.parse_args()
 
@@ -20,9 +20,10 @@ def get_params():
     parser = argparse.ArgumentParser(description="parameters of agents")
     parser.add_argument("--algorithm", type=str, default='AC')
     parser.add_argument("--epsilon", type=float, default=0.9)
-    parser.add_argument("--epoch", type=int, default=1000)
-    parser.add_argument("--n_agents", type=int, default=6)
+    parser.add_argument("--epoch", type=int, default=10000)
+    parser.add_argument("--n_agents", type=int, default=8)
     parser.add_argument("--gamma", type=float, default=0.9)
+    parser.add_argument("--load", type=bool, default=False)
     return parser.parse_args()
 
 def get_envSetting(params, env):
@@ -46,15 +47,15 @@ def main():
             state, reward, done = env.reset(epoch=ep)
             while (False in done):
             # while time_step <= 100:
-                if ep >= 80:
-                    time.sleep(0.15)
+            #     if ep >= 80:
+            #         time.sleep(0.15)
                 # if time_step%1000 == 0:
                 #     env.save_img()
                 env.render()
                 transition = []
                 action = agents.choose_action(state)
-                # next_state, reward, done = env.step(action)
-                next_state, reward, done = env.testMode(action)
+                next_state, reward, done = env.step(action)
+                # next_state, reward, done = env.testMode(action)
                 ep_reward = ep_reward + sum(reward.values())
                 # temp_rew = {}
                 # for i in range(len(reward.values())):
@@ -70,6 +71,9 @@ def main():
 
     elif params.algorithm == "AC":
         agents = ACAgents(params)
+        if params.load:
+            ep = agents.load()
+            print("ep:",ep)
         for ep in range(params.epoch):
             time_step = 0
             ep_reward = 0
@@ -83,9 +87,12 @@ def main():
                 env.render()
                 transition = []
                 action = agents.choose_action(state)
-                # next_state, reward, done = env.step(action)
-                next_state, reward, done = env.testMode(action)
+                next_state, reward, done = env.step(action)
+                # next_state, reward, done = env.testMode(action)
                 ep_reward = ep_reward + sum(reward.values())
+                # temp_rew = {}
+                # for i in range(len(reward.values())):
+                #     temp_rew[i] = sum(reward.values())
                 for i in range(params.n_agents):
                     transition.append({"state":state[i], "action":action[i], "next_state":next_state[i], "reward":[reward[i]]})
                 # agents.store_transitions(transition)
@@ -93,6 +100,7 @@ def main():
                 agents.learn(transition)
                 del transition
                 time_step += 1
+                agents.save(ep, "./model/")
             env.print_reward(ep, ep_reward)
 
 

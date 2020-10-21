@@ -3,7 +3,7 @@ import argparse
 from env2.BaseEnv import BaseEnv, Base_original
 from Logger import Logger
 
-logger = Logger('/Users/xue/Desktop/logPC/logAC3')
+logger = Logger('/Users/xue/Desktop/logPC/logAC_DQN/logACN2')
 
 class EscalatorEnv():
     def __init__(self, args):
@@ -62,7 +62,7 @@ class EscalatorEnv():
 
     def print_reward(self, epoch, reward=None):
         if reward != None:
-            logger.scalar_summary("total reward", reward, epoch)
+            # logger.scalar_summary("total reward", reward, epoch)
             print("ep_reward:",reward)
         else:
             reward = self.baseEnv.rewardRec
